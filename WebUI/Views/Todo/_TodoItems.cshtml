@@ -1,0 +1,57 @@
+﻿
+<div class="clearfix">
+    <h2 class="float-start" id="selected-list-title">@Model.ListTitle</h2>
+    <button id="listOptions" class="btn btn-default float-end" title="List Options..." type="button" id="dropdown-menu-list" data-bs-toggle="dropdown" aria-expanded="false">
+        <i class="fa-solid fa-ellipsis"></i>
+    </button>
+    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="dropdown-menu-list">
+        <li><a class="dropdown-item" asp-controller="Todo" asp-action="DeleteList" asp-route-id="@Model.ListId">Remove the list</a></li>
+    </ul>
+
+</div>
+<ul class="list-group mb-2" id="item-list">
+    @foreach (var item in @Model.Items)
+    {
+        <li class="list-group-item">
+            <div class="d-flex">
+                <div class="todo-item-checkbox">
+                    <input type="checkbox" id="@("itemDone"+@item.Id)" Checked="@item.Done" onclick="onClickDone(@item.Id)" />
+                </div>
+                <div class="flex-fill">
+                    <input id="@("itemTitle"+@item.Id)" onfocusout="onFocusOutTitle(@item.Id)" type="text" class="form-control item-input-control" style="@(@item.Done ? "text-decoration:line-through" : "text-decoration:auto")" autofocus="autofocus" value="@item.Title" />
+                    <input id="@("itemNote"+@item.Id)" value="@item.Note" hidden />
+                    <input id="@("itemListId"+@item.Id)" value=@item.ListId type="number" hidden />
+                    <input id="@("itemPriority"+@item.Id)" value=@item.Priority type="number" hidden />
+                </div>
+                <div class="todo-item-commands">
+                    <button class="btn btn-default btn-xs" role="button" type="button" id="dropdown-menu-item" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="fa-solid fa-ellipsis"></i>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="dropdown-menu-item">
+                        <li><a class="dropdown-item" asp-controller="Todo" asp-action="DeleteItem" asp-route-id="@item.Id">Remove from the list</a></li>
+                    </ul>
+                </div>
+            </div>
+        </li>
+    }
+    <li class="list-group-item">
+        <div class="row">
+            <div class="col-md-8">
+                <input id="create-item" class="form-control"/>
+            </div>
+            
+            <div class="col-md-4">
+                <button class="btn btn-primary" onclick="onClickAddItem()">Add Item...</button>
+            </div>
+            
+            
+        </div>
+        
+    </li>
+</ul>
+
+@section Scripts{
+<script>
+
+</script>
+}

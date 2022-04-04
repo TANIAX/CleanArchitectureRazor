@@ -1,0 +1,260 @@
+@{
+    ViewData["Title"] = "TodoItem - List";
+}
+<h1>Todo</h1>
+
+<p>This is a complex todo list component.</p>
+
+<div class="row">
+    <div class="col-sm-4">
+        <div class="clearfix">
+            <h2 class="float-start">Lists</h2>
+            <button class="btn btn-default float-end" title="Add List...">
+                <i class="fa-solid fa-plus" data-bs-toggle="modal" data-bs-target="#create-list-modal"></i>
+            </button>
+        </div>
+
+        <ul class="list-group" id="list">
+            @foreach (var list in Model.Lists)
+            {
+                <li class="list-group-item" onclick="onClickTodoList(@list.Id)" id="@("todo-list" + @list.Id)">
+                    <div class="clearfix">
+                        <div class="float-start">
+                            @list.Title
+                        </div>
+                        <div class="float-end text-right">
+                            <span class="badge bg-light text-dark">@list.NumberOfItems</span>
+                        </div>
+                    </div>
+                </li>
+            }
+        </ul>
+    </div>
+    <div class="col-sm-8" id="todo-items">
+        <h2>Select a list...</h2>
+    </div>
+</div>
+
+@*Modal for adding list*@
+
+<div class="modal fade" id="create-list-modal" tabindex="-1" aria-labelledby="create-list-modal-label" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header ">
+                <h5 class="modal-title" id="create-list-modal-label">New list</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="title" style="padding:5px">Title</label>
+                    <input type="text" class="form-control" id="title" name="title" placeholder="List title..." />
+                </div>
+                <div id="create-list-errors">
+                    
+                </div>
+                
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" onclick="onClickCreateList()">Create</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts{
+<script>
+    //If no list is selected, show the first one
+    $(document).ready(function() {
+        var arr = location.href.toString().split('/');
+        var stringId = arr[arr.length - 1];
+        var id = parseInt(stringId);
+
+        if (id <= 0 || Number.isNaN(id) ) {
+            $("#list li:first").click();
+        }
+    });
+
+    //Setting active class on the selected list and fetch the items
+    function onClickTodoList(listId){
+        //Remove class active from all list items
+        var listItems = document.getElementsByClassName("list-group-item");
+        for (var i = 0; i < listItems.length; i++) {
+            listItems[i].classList.remove("active");
+        }
+
+        //Apply class active to the selected list item
+        var listItem = document.getElementById("todo-list" + listId);
+        listItem.classList.add("active");
+
+        //Fetch item for the selected list
+        $(document).ready(function () {
+        $.ajax({
+          url: "/Todo/ListItems/"+listId,
+          type: "GET",
+          success: function (data) {
+              $("#todo-items").html(data);
+          }
+        })
+        });
+    }
+
+
+    function onClickAddListButton(){
+        //Open form modal
+        $('#myModal').on('shown.bs.modal', function () {
+          $('#myInput').trigger('focus')
+        })
+    }
+    
+    function onClickCreateList(){
+        $(document).ready(function () {
+            let title = $("#title").val();
+            $.ajax({
+                type: "POST",
+                url: "/api/TodoApi/CreateList",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                data: JSON.stringify({
+                    Title: title
+                }),
+                
+                success: function (data) {
+                    //Create
+                    var nextElement = $('<li class="list-group-item" onclick="onClickTodoList('+data+')" id="todo-list'+data+'"><div class="clearfix"><div class="float-start">'+title+'</div><div class="float-end text-right"><span class="badge bg-light text-dark">0</span> </div></div> </li>');            
+                    
+                    //Pushing nextElement into the ul
+                    $("#list").append(nextElement);
+                    
+                    //Closing modal
+                    $("#create-list-modal").modal("hide");
+
+                    //Selecting the new list
+                    $("#todo-list" + data).click();
+                },
+                error: function (errors) {
+                    //printing errors
+                    $.each(errors.responseJSON.errors, function( key, value ) {
+                        for(var i = 0; i < value.length; i++){
+                            $("#create-list-errors").append('<span class="text-danger">'+value[i]+'</span>');
+                        }
+                        
+                    });
+                }
+            })
+        });
+    }
+
+    function updateItem(id){
+        var itemId          = id;
+        var itemTitle       = ($("#itemTitle"+id).val() == undefined ? '' : $("#itemTitle"+id).val());
+        var itemNote        = ($("#itemNote "+id).val() == undefined ? '' : $("#itemNote "+id).val());
+        var itemListId      = ($("#itemListId"+id).val() == undefined ? 0 : +$("#itemListId"+id).val());
+        var itemPriority    = ($("#itemPriority"+id).val() == undefined ? 0 : +$("#itemPriority"+id).val());
+        var itemDone        = $("#itemDone"+id).is(":checked");
+        
+        $(document).ready(function () {
+            $.ajax({
+                type: "POST",
+                url: "/api/TodoApi/UpdateItem",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                data: JSON.stringify({
+                    Id : itemId,
+                    Title :itemTitle,
+                    Note : itemNote,
+                    Done : itemDone,
+                    ListId : itemListId,
+                    Priority : itemPriority
+                }),
+                
+                success: function (data) {
+                    if(itemDone)
+                        $("#itemTitle"+id).css("text-decoration","line-through")
+                    else
+                        $("#itemTitle"+id).css("text-decoration","auto")
+                },
+                error: function (errors) {
+                    //priting errors
+                   
+                }
+            })
+        });
+    }
+    
+    function onClickDone(id){
+        updateItem(id);
+    }
+    
+    function onFocusOutTitle(id){
+        updateItem(id);
+    }
+
+    function onClickAddItem(){
+        var itemTitle       = ($("#create-item").val() == undefined ? 'TODO' : $("#create-item").val());
+        var listId          = ($("#list li.active").attr("id") == undefined ? 0 : +$("#list li.active").attr("id").replace("todo-list",""));
+        
+        if(listId > 0){
+            $(document).ready(function () {
+            $.ajax({
+                type: "POST",
+                url: "/api/TodoApi/CreateItem",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                data: JSON.stringify({
+                    Title : itemTitle,
+                    ListId : listId,
+                    Priority : 1,
+                    Note : ''
+                }),
+                
+                success: function (data) {
+                    //Erase input
+                    $("#create-item").val("");
+
+                    var nextElement = `
+                            <li class="list-group-item">
+                                <div class="d-flex">
+                                    <div class="todo-item-checkbox">
+                                        <input type="checkbox" id="%1" Checked="false" onclick="onClickDone(%1)" />
+                                    </div>
+                                    <div class="flex-fill">
+                                        <input id="itemTitle%1" onfocusout="onFocusOutTitle(%1)" type="text" class="form-control item-input-control" autofocus="autofocus" value="%3" />
+                                        <input id="itemNote%1" value="" hidden />
+                                        <input id="itemListId%1" value=%2 type="number" hidden />
+                                        <input id="itemPriority%1" value=1 type="number" hidden />
+                                    </div>
+                                    <div class="todo-item-commands">
+                                        <button class="btn btn-default btn-xs" role="button" type="button" id="dropdown-menu-item" data-bs-toggle="dropdown" aria-expanded="false">
+                                            <i class="fa-solid fa-ellipsis"></i>
+                                        </button>
+                                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="dropdown-menu-item">
+                                            <li><a href="/Todo/DeleteItem/%1" class="dropdown-item">Remove from the list</a></li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </li>
+                           `;
+                   //Replace %1, %2, %3
+                   console.log(nextElement);
+                   nextElement = nextElement.replaceAll("%1",data);
+                   nextElement = nextElement.replace("%2",listId);
+                   nextElement = nextElement.replace("%3",itemTitle);
+                   console.log(nextElement);
+                   //Append element to item list
+                   $("#item-list li:last").before(nextElement);
+                },
+                error: function (errors) {
+                    //priting errors
+                   
+                }
+            })
+        });
+        }
+        
+    }
+</script>
+}

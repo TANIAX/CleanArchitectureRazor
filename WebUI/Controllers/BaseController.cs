@@ -1,6 +1,9 @@
 ﻿using Application.Common.Exceptions;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
+using Newtonsoft.Json;
+using System.Net;
+using System.Text.Json;
 
 namespace WebUI.Controllers
 {
@@ -9,46 +12,68 @@ namespace WebUI.Controllers
         protected IMediator _mediator { get; }
         
         public BaseController(IMediator mediator) => _mediator = mediator;
-
-        protected void HandleException(Exception exception, string model = "")
+        
+        protected void HandleException(Exception exception)
         {
-            string specificErrors;
-            Type exceptionType = exception.GetType();
+            
+                string specificErrors;
+                Type exceptionType = exception.GetType();
 
-            //Display error from ValidationException object initialized in the application
-            if (exceptionType == typeof(ValidationException))
-            {
-                //Cast exception to Validation exception
-                var validationException = new ValidationException();
-                validationException = (ValidationException)exception;
-
-                //Clear errors
-                foreach (var modelValue in ModelState.Values)
+                //Display error from ValidationException object initialized in the application
+                if (exceptionType == typeof(ValidationException))
                 {
-                    modelValue.Errors.Clear();
-                }
+                    //Cast exception to Validation exception
+                    var validationException = new ValidationException();
+                    validationException = (ValidationException)exception;
 
-                //Display our custom error from validation class
-                foreach (var error in validationException.Errors)
-                {
-                    specificErrors = "";
-
-                    foreach (var errorValue in error.Value)
+                    //Clear errors
+                    foreach (var modelValue in ModelState.Values)
                     {
-                        if (specificErrors != String.Empty)
-                            specificErrors += Environment.NewLine;
-
-                        specificErrors += errorValue;
+                        modelValue.Errors.Clear();
                     }
-                    ModelState.AddModelError("error." + error.Key, specificErrors);
+
+                    //Display our custom error from validation class
+                    foreach (var error in validationException.Errors)
+                    {
+                        specificErrors = "";
+
+                        foreach (var errorValue in error.Value)
+                        {
+                            if (specificErrors != String.Empty)
+                                specificErrors += Environment.NewLine;
+
+                            specificErrors += errorValue;
+                        }
+                        TempData["Error." + error.Key] = specificErrors;
+                    }
+                }
+                //The exception does not come from Validation exception
+                else
+                {
+                    TempData["UnknownError"] = exception.Message;
                 }
             }
-            //The exception does not come from Validation exception
-            else
+        }        
+  }
+    public static class HttpRequestExtensions
+    {
+        private const string RequestedWithHeader = "X-Requested-With";
+        private const string XmlHttpRequest = "XMLHttpRequest";
+
+        public static bool IsAjaxRequest(this HttpRequest request)
+        {
+            if (request == null)
             {
-                ModelState.AddModelError(String.Empty, exception.Message);
+                throw new ArgumentNullException("request");
             }
+
+            if (request.Headers != null)
+            {
+                return request.Headers[RequestedWithHeader] == XmlHttpRequest;
+            }
+
+            return false;
         }
     }
-}
+
 

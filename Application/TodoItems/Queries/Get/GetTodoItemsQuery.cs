@@ -2,6 +2,7 @@
 using Application.Common.Interfaces;
 using AutoMapper;
 using AutoMapper.QueryableExtensions;
+using Domain.Entities;
 using MediatR;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -13,7 +14,7 @@ using System.Threading.Tasks;
 
 namespace Application.TodoItems.Queries.Get
 {
-    public class GetTodoItemsQuery : IRequest<TodoItemVm>
+    public class GetTodoItemsQuery : IRequest<TodoItemsVm>
     {
         public int Id { get; set; }
 
@@ -23,7 +24,7 @@ namespace Application.TodoItems.Queries.Get
         }
     }
 
-    public class GetTodoItemsQueryHandler : IRequestHandler<GetTodoItemsQuery, TodoItemVm>
+    public class GetTodoItemsQueryHandler : IRequestHandler<GetTodoItemsQuery, TodoItemsVm>
     {
         private readonly IApplicationDbContext _context;
         private readonly ICurrentUserService _currentUserService;
@@ -36,11 +37,28 @@ namespace Application.TodoItems.Queries.Get
             _currentUserService = currentUserService;
         }
 
-        public async Task<TodoItemVm> Handle(GetTodoItemsQuery request, CancellationToken cancellationToken)
+        public async Task<TodoItemsVm> Handle(GetTodoItemsQuery request, CancellationToken cancellationToken)
         {
-            return await _context.TodoItems
-            .ProjectTo<TodoItemVm>(_mapper.ConfigurationProvider)
-            .FirstOrDefaultAsync(x => x.Id == request.Id);
+            TodoItemsVm vm = new TodoItemsVm();
+            TodoList list;
+            
+            vm.Items = await _context.TodoItems
+            .Where(x => x.ListId == request.Id)
+            .OrderBy(x => x.Title)
+            .ProjectTo<TodoItemDto>(_mapper.ConfigurationProvider)
+            .ToListAsync(cancellationToken);
+
+            list = await _context.TodoLists
+                .FirstOrDefaultAsync(x => x.Id == request.Id);  
+
+            if (list != null)
+            {
+                vm.ListTitle = list.Title;
+                vm.ListId = list.Id;
+            }
+
+
+            return vm;
         }
     }
 }

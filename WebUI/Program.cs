@@ -8,6 +8,9 @@ using Application;
 using Infrastructure;
 using WebUI.Services;
 using Infrastructure.Identity;
+using WebUI.Controllers;
+using WebUI.Filters;
+using FluentValidation.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -15,6 +18,10 @@ builder.Services.AddRazorPages();
 builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddHttpContextAccessor();
+builder.Services.AddControllersWithViews(options =>
+           options.Filters.Add<ApiExceptionFilterAttribute>())
+               .AddFluentValidation(x => x.AutomaticValidationEnabled = false);
+
 builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
 
 var app = builder.Build();

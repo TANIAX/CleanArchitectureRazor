@@ -10,19 +10,26 @@
 			<h2 class="pl-3">@ViewData["Title"]</h2>
             <hr />
 		</div>
+        
+        @if (TempData.ContainsKey("UnknownError"))
+		{
+			<div class="alert alert-danger">
+				<strong>Error!</strong> @TempData["UnknownError"]
+			</div>
+		}
 		
         <input hidden for="Id" value=@Model.TodoItem.Id />
         
 		<div class="mb-3">
 			<label for="Title">Title</label>
 			<input for="Title" name="Title" value="@Model.TodoItem.Title" class="form-control" />
-            @Html.ValidationMessage("error.Title", new { @class = "text-danger model-state-specific-error" })
+            @if (TempData.ContainsKey("error.Title")) {<span class="text-danger model-state-specific-error">@TempData["error.Title"]</span>}
 		</div>
 
 		<div class="mb-3">
 			<label for="Note">Note</label>
 			<input for="Note" Name="Note" value="@Model.TodoItem.Note" class="form-control" />
-			@Html.ValidationMessage("error.Note", new { @class = "text-danger model-state-specific-error" })
+            @if (TempData.ContainsKey("error.Note")) {<span class="text-danger model-state-specific-error">@TempData["error.Title"]</span>}
 		</div>
 
 		<div class="mb-3">
@@ -35,7 +42,7 @@
 				}                 
 			</select>
 			<input for="ListId" name="ListId" value=@Model.TodoItem.ListId hidden id="todo-int"/>
-			@Html.ValidationMessage("error.ListId", new { @class = "text-danger model-state-specific-error" })
+			@if (TempData.ContainsKey("error.ListId")) {<span class="text-danger model-state-specific-error">@TempData["error.Title"]</span>}
 		</div>
 
 		<div class="mb-3">
@@ -44,7 +51,7 @@
                 <option value="@Priority">@Model.TodoItem.Priority</option>
 			</select>
 			<input for="Priority" name="Priority" value=1 hidden id="priority-int"/>
-			@Html.ValidationMessage("error.Priority", new { @class = "text-danger model-state-specific-error" })
+			@if (TempData.ContainsKey("error.Priority")) {<span class="text-danger model-state-specific-error">@TempData["error.Title"]</span>}
 		</div>
         
 		<button asp-controller="TodoItem" asp-action="Edit" asp-route-id=@Model.TodoItem.Id type="submit" class="btn btn-primary" style="width:150px;">Update</button>
